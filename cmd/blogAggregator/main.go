@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
@@ -8,7 +9,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 
+	"github.com/AxterDoesCode/blogAggregator/internal/database"
+	"github.com/AxterDoesCode/blogAggregator/pkg/apiconfig"
 	httphandler "github.com/AxterDoesCode/blogAggregator/pkg/httpHandler"
 )
 
@@ -17,6 +21,19 @@ func main() {
 	port := os.Getenv("PORT")
 	r := chi.NewRouter()
 	v1Router := chi.NewRouter()
+	dbURL := os.Getenv("GOOSE_DBSTRING")
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	dbQueries := database.New(db)
+
+	apiCfg := apiconfig.ApiConfig{
+		DB: dbQueries,
+	}
+
 	r.Use(cors.Handler(cors.Options{
 		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
 		AllowedOrigins: []string{"https://*", "http://*"},
@@ -30,6 +47,8 @@ func main() {
 	r.Mount("/v1", v1Router)
 	v1Router.Get("/readiness", httphandler.Readiness)
 	v1Router.Get("/err", httphandler.ErrHandler)
+	v1Router.Post("/users", apiCfg.HandleCreateUser)
+
 	server := &http.Server{
 		Addr:    ":" + port,
 		Handler: r,
