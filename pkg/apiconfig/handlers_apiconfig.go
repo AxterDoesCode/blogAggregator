@@ -2,6 +2,7 @@ package apiconfig
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
@@ -38,5 +39,24 @@ func (cfg *ApiConfig) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	httphandler.RespondWithJSON(w, http.StatusOK, user)
+}
+
+func (cfg *ApiConfig) HandleGetUser(w http.ResponseWriter, r *http.Request) {
+	apiKey := r.Header.Get("Authorization")
+	if apiKey == "" {
+		httphandler.RespondWithError(w, http.StatusInternalServerError, "Api Key doesn't exist")
+		return
+	}
+	user, err := cfg.DB.GetUser(r.Context(), apiKey)
+	if err != nil {
+		httphandler.RespondWithError(
+			w,
+			http.StatusInternalServerError,
+			"Error fetching user from database",
+		)
+		log.Printf("Api_Key: %v", apiKey)
+		return
+	}
 	httphandler.RespondWithJSON(w, http.StatusOK, user)
 }

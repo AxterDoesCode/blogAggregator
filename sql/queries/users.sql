@@ -8,3 +8,6 @@ VALUES (
   encode(sha256(random()::text::bytea), 'hex')
   )
 RETURNING *;
+-- name: GetUser :one
+SELECT * FROM users WHERE apikey = $1;
+
