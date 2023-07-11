@@ -78,6 +78,11 @@ func (cfg *ApiConfig) HandleCreateFeed(w http.ResponseWriter, r *http.Request, u
 		Name string `json:"name"`
 		Url  string `json:"url"`
 	}
+
+	type response struct {
+		Feed       database.Feed       `json:"feed"`
+		FeedFollow database.FeedFollow `json:"feed_follow"`
+	}
 	decoder := json.NewDecoder(r.Body)
 	params := requestParams{}
 	err := decoder.Decode(&params)
@@ -101,7 +106,19 @@ func (cfg *ApiConfig) HandleCreateFeed(w http.ResponseWriter, r *http.Request, u
 		httphandler.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf(("%v"), err))
 		return
 	}
-	httphandler.RespondWithJSON(w, http.StatusOK, feed)
+
+	feedFollow, err := cfg.DB.CreateFeedFollow(r.Context(), database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		FeedID:    feed.ID,
+		UserID:    user.ID,
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+	})
+
+	httphandler.RespondWithJSON(w, http.StatusOK, response{
+		Feed:       feed,
+		FeedFollow: feedFollow,
+	})
 }
 
 func (cfg *ApiConfig) HandleGetFeeds(w http.ResponseWriter, r *http.Request) {
