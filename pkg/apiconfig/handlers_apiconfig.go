@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
 	"github.com/AxterDoesCode/blogAggregator/internal/database"
@@ -114,4 +115,74 @@ func (cfg *ApiConfig) HandleGetFeeds(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httphandler.RespondWithJSON(w, http.StatusOK, feeds)
+}
+
+func (cfg *ApiConfig) HandleCreateFeedFollow(
+	w http.ResponseWriter,
+	r *http.Request,
+	user database.User,
+) {
+	type requestParams struct {
+		FeedID uuid.UUID `json:"feed_id"`
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	params := requestParams{}
+	err := decoder.Decode(&params)
+	if err != nil {
+		httphandler.RespondWithError(w, http.StatusInternalServerError, "Error decoding parameters")
+		return
+	}
+	feedFollow, err := cfg.DB.CreateFeedFollow(r.Context(), database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		FeedID:    params.FeedID,
+		UserID:    user.ID,
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+	})
+	httphandler.RespondWithJSON(w, http.StatusOK, feedFollow)
+}
+
+func (cfg *ApiConfig) HandleDeleteFeedFollow(
+	w http.ResponseWriter,
+	r *http.Request,
+	user database.User,
+) {
+	feedFollowIDStr := chi.URLParam(r, "feedFollowID")
+	feedFollowID, err := uuid.Parse(feedFollowIDStr)
+	if err != nil {
+		httphandler.RespondWithError(w, http.StatusInternalServerError, "Error parsing UUID")
+		return
+	}
+	err = cfg.DB.DeleteFeedFollow(r.Context(), database.DeleteFeedFollowParams{
+		ID:     feedFollowID,
+		UserID: user.ID,
+	})
+
+	if err != nil {
+		httphandler.RespondWithError(
+			w,
+			http.StatusInternalServerError,
+			"Error deleting feed follow",
+		)
+		return
+	}
+	httphandler.RespondWithJSON(w, http.StatusOK, struct{}{})
+}
+
+func (cfg *ApiConfig) HandleGetFeedFollow(
+	w http.ResponseWriter,
+	r *http.Request,
+	user database.User,
+) {
+	feedFollows, err := cfg.DB.GetFeedFollows(r.Context(), user.ID)
+	if err != nil {
+		httphandler.RespondWithError(
+			w,
+			http.StatusInternalServerError,
+			"Error getting feed follows",
+		)
+		return
+	}
+	httphandler.RespondWithJSON(w, http.StatusOK, feedFollows)
 }

@@ -39,7 +39,7 @@ func main() {
 		AllowedOrigins: []string{"https://*", "http://*"},
 		// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		AllowedHeaders:   []string{"*"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: false,
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
@@ -51,6 +51,12 @@ func main() {
 	v1Router.Get("/users", apiCfg.MiddlewareAuth(apiCfg.HandleGetUserByApiKey))
 	v1Router.Post("/feeds", apiCfg.MiddlewareAuth(apiCfg.HandleCreateFeed))
 	v1Router.Get("/feeds", apiCfg.HandleGetFeeds)
+	v1Router.Post("/feed_follows", apiCfg.MiddlewareAuth(apiCfg.HandleCreateFeedFollow))
+	v1Router.Delete(
+		"/feed_follows/{feedFollowID}",
+		apiCfg.MiddlewareAuth(apiCfg.HandleDeleteFeedFollow),
+	)
+	v1Router.Get("/feed_follows", apiCfg.MiddlewareAuth(apiCfg.HandleGetFeedFollow))
 
 	server := &http.Server{
 		Addr:    ":" + port,
