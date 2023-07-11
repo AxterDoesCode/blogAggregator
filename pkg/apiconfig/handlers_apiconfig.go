@@ -102,3 +102,16 @@ func (cfg *ApiConfig) HandleCreateFeed(w http.ResponseWriter, r *http.Request, u
 	}
 	httphandler.RespondWithJSON(w, http.StatusOK, feed)
 }
+
+func (cfg *ApiConfig) HandleGetFeeds(w http.ResponseWriter, r *http.Request) {
+	feeds, err := cfg.DB.GetAllFeeds(r.Context())
+	if err != nil {
+		httphandler.RespondWithError(
+			w,
+			http.StatusInternalServerError,
+			"Error getting feeds from database",
+		)
+		return
+	}
+	httphandler.RespondWithJSON(w, http.StatusOK, feeds)
+}
