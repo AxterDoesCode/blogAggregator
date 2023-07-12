@@ -58,6 +58,7 @@ func main() {
 		apiCfg.MiddlewareAuth(apiCfg.HandleDeleteFeedFollow),
 	)
 	v1Router.Get("/feed_follows", apiCfg.MiddlewareAuth(apiCfg.HandleGetFeedFollow))
+	v1Router.Get("/posts", apiCfg.MiddlewareAuth(apiCfg.HandleGetPosts))
 
 	server := &http.Server{
 		Addr:    ":" + port,

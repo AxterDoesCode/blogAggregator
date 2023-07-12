@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -202,4 +203,27 @@ func (cfg *ApiConfig) HandleGetFeedFollow(
 		return
 	}
 	httphandler.RespondWithJSON(w, http.StatusOK, feedFollows)
+}
+
+func (cfg *ApiConfig) HandleGetPosts(w http.ResponseWriter, r *http.Request, user database.User) {
+	limitStr := r.URL.Query().Get("limit")
+	limit := 10
+
+	if specifiedLimit, err := strconv.Atoi(limitStr); err == nil {
+		limit = specifiedLimit
+	}
+
+	posts, err := cfg.DB.GetPostByUser(r.Context(), database.GetPostByUserParams{
+		UserID: user.ID,
+		Limit:  int32(limit),
+	})
+	if err != nil {
+		httphandler.RespondWithError(
+			w,
+			http.StatusInternalServerError,
+			"Couldn't get posts for this user",
+		)
+		return
+	}
+	httphandler.RespondWithJSON(w, http.StatusOK, posts)
 }
